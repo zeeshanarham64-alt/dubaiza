@@ -273,6 +273,17 @@ function App() {
         </section>
       </main>
 
+        <section className="job-banner" aria-label="Job seekers">
+          <div className="job-icon">◍</div>
+          <div className="job-copy">
+            <p className="job-label">Job Seekers</p>
+            <h3>Find your dream job</h3>
+            <p>Browse thousands of job vacancies from top companies in the UAE.</p>
+          </div>
+          <button type="button" className="job-button">Explore Jobs</button>
+        </section>
+      </main>
+
       <nav className="bottom-nav" aria-label="Main navigation">
         {navItems.map((item) => (
           <button

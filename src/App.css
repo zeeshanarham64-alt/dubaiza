@@ -543,6 +543,70 @@
   margin-top: 20px;
 }
 
+.job-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 18px;
+  padding: 16px 16px 18px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #ffffff 0%, #f6f7ff 100%);
+  border: 1px solid #e7e7ef;
+  box-shadow: 0 12px 22px rgba(15, 23, 42, 0.04);
+}
+
+.job-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #fde68a, #fbbf24);
+  color: #5b3f00;
+  font-size: 1.7rem;
+  font-weight: 900;
+}
+
+.job-copy {
+  flex: 1;
+}
+
+.job-label {
+  margin: 0 0 6px;
+  color: #6b7280;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.job-copy h3 {
+  margin: 0 0 4px;
+  color: #111827;
+  font-size: 1.2rem;
+  letter-spacing: -0.05em;
+}
+
+.job-copy p:last-child {
+  margin: 0;
+  color: #4b5563;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.job-button {
+  border: none;
+  background: linear-gradient(135deg, #ef1d2d, #d11a2d);
+  color: #fff;
+  border-radius: 999px;
+  padding: 11px 18px;
+  font-weight: 800;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
 .bottom-nav {
   position: fixed;
   left: 50%;
