@@ -271,7 +271,6 @@ function App() {
             ))}
           </div>
         </section>
-      </main>
 
         <section className="job-banner" aria-label="Job seekers">
           <div className="job-icon">◍</div>
