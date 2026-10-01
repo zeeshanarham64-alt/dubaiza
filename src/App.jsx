@@ -98,11 +98,19 @@ function App() {
           <span className="brand-mark">D</span>
           <span className="brand-text">DubaiZA</span>
         </div>
-        <button className="menu-button" type="button" aria-label="Menu">
-          <span />
-          <span />
-          <span />
-        </button>
+
+        <div className="header-actions">
+          <button className="theme-button" type="button" aria-label="Change theme">
+            <span className="theme-swatch" aria-hidden="true" />
+            Change Theme
+          </button>
+
+          <button className="menu-button" type="button" aria-label="Menu">
+            <span />
+            <span />
+            <span />
+          </button>
+        </div>
       </header>
 
       <main className="content">
@@ -129,7 +137,7 @@ function App() {
             <div className="search-bar" role="search">
               <div className="search-field search-primary">
                 <span className="search-icon">⌕</span>
-                <input type="text" value="Search for anything..." readOnly aria-label="Search" />
+                <input type="text" placeholder="Search for anything..." aria-label="Search" />
               </div>
 
               <div className="search-field search-location">
