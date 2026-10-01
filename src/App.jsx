@@ -82,14 +82,6 @@ const projects = [
   },
 ]
 
-const navItems = [
-  { label: 'Home', active: true, icon: '⌂' },
-  { label: 'Search', active: false, icon: '⌕' },
-  { label: 'Sell', active: false, icon: '+' },
-  { label: 'Chat', active: false, icon: '◌' },
-  { label: 'Profile', active: false, icon: '◩' },
-]
-
 function App() {
   return (
     <div className="page-shell">
@@ -282,19 +274,6 @@ function App() {
           <button type="button" className="job-button">Explore Jobs</button>
         </section>
       </main>
-
-      <nav className="bottom-nav" aria-label="Main navigation">
-        {navItems.map((item) => (
-          <button
-            key={item.label}
-            type="button"
-            className={`nav-item ${item.active ? 'active' : ''}`}
-          >
-            <span className="nav-icon">{item.icon}</span>
-            <span>{item.label}</span>
-          </button>
-        ))}
-      </nav>
     </div>
   )
 }
