@@ -13,6 +13,9 @@ import {
   Heart,
   House,
   Lock,
+  Maximize2,
+  Minimize2,
+  User,
   Mail,
   MapPin,
   MessageCircle,
@@ -861,6 +864,67 @@ function ListingCard({ item, saved, onToggleSaved, onMessage, onDelete, compact 
   )
 }
 
+
+function DubaiZALogo({ size = 38, className = '' }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 64 64"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={`dubaiza-emblem ${className}`}
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient id="dzGradBg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#f43f5e" />
+          <stop offset="45%" stopColor="#dc2626" />
+          <stop offset="100%" stopColor="#991b1b" />
+        </linearGradient>
+        <linearGradient id="dzGradGold" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#fde047" />
+          <stop offset="40%" stopColor="#f59e0b" />
+          <stop offset="100%" stopColor="#b45309" />
+        </linearGradient>
+        <linearGradient id="dzGradFacet" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+        </linearGradient>
+        <filter id="dzGlow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#dc2626" floodOpacity="0.35" />
+        </filter>
+      </defs>
+
+      {/* Ruby Luxury Rounded Shield */}
+      <rect x="4" y="4" width="56" height="56" rx="16" fill="url(#dzGradBg)" filter="url(#dzGlow)" />
+      <rect x="4" y="4" width="56" height="56" rx="16" fill="url(#dzGradFacet)" />
+      <rect x="4.5" y="4.5" width="55" height="55" rx="15.5" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
+
+      {/* Dubai Burj Sail Architecture D Monogram */}
+      <path
+        d="M20 16C20 14.8954 20.8954 14 22 14H28C36.8366 14 44 21.1634 44 30C44 34.2 42.4 38.0 39.8 40.9L32.2 49.2C31.4 50.1 30.2 50.5 29.1 50.3C27.9 50.1 27 49.1 27 47.9V22H22C20.8954 22 20 21.1046 20 20V16Z"
+        fill="#ffffff"
+      />
+      {/* Sail Cutout */}
+      <path
+        d="M27 21H30C35.5228 21 40 25.4772 40 31C40 34.5 38.2 37.6 35.5 39.4L27 48.6V21Z"
+        fill="url(#dzGradBg)"
+      />
+      {/* UAE Golden Falcon Wing Curve */}
+      <path
+        d="M27 22C31.5 22 36.5 25 38 30C35 28 31 27 27 27V22Z"
+        fill="url(#dzGradGold)"
+      />
+      {/* 4-point Diamond Star */}
+      <path
+        d="M44 14L45.2 18L49 19.2L45.2 20.4L44 24.5L42.8 20.4L39 19.2L42.8 18L44 14Z"
+        fill="url(#dzGradGold)"
+      />
+    </svg>
+  )
+}
+
 function App() {
   const inviteChatId = new URLSearchParams(window.location.search).get('chat')
   const [activePage, setActivePage] = useState(inviteChatId ? 'Chat' : 'Home')
@@ -870,6 +934,7 @@ function App() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [openCategoryMenu, setOpenCategoryMenu] = useState(null)
   const [showAuthModal, setShowAuthModal] = useState(false)
+  const [modalExpanded, setModalExpanded] = useState(false)
   const [authView, setAuthView] = useState('login')
   const [authMode, setAuthMode] = useState('email')
   const [showPassword, setShowPassword] = useState(false)
@@ -1089,53 +1154,95 @@ function App() {
       }}
     >
       {showAuthModal && (
-        <div className="auth-modal-backdrop" aria-modal="true" role="dialog">
-          <div className="auth-modal-shell">
-            <div className="auth-panel-left">
-              <div className="auth-brand-row">
-                <div className="auth-brand-badge">D</div>
-                <div className="auth-brand-badge auth-brand-badge--ghost">D</div>
-              </div>
+        <div
+          className="auth-modal-backdrop"
+          aria-modal="true"
+          role="dialog"
+          onClick={() => setShowAuthModal(false)}
+        >
+          <div
+            className={`auth-modal-shell ${modalExpanded ? 'is-expanded' : 'is-compact'}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {modalExpanded && (
+              <div className="auth-panel-left">
+                <div className="auth-brand-row">
+                  <DubaiZALogo size={48} />
+                  <div className="auth-brand-info">
+                    <span className="auth-brand-name">Dubai<span className="brand-accent-za">ZA</span></span>
+                    <span className="auth-brand-tag">UAE Trusted Platform</span>
+                  </div>
+                </div>
 
-              <div className="auth-left-copy">
-                <div className="auth-left-label">{authView === 'register' ? 'Create account' : 'Trusted marketplace'}</div>
-                <h2>{authView === 'register' ? 'Join DubaiZA' : 'Welcome to DubaiZA'}</h2>
-                <p>Buy, sell, and connect with verified buyers and sellers across the UAE.</p>
-              </div>
+                <div className="auth-left-copy">
+                  <div className="auth-left-label">{authView === 'register' ? 'Join Community' : 'Verified Access'}</div>
+                  <h2>{authView === 'register' ? 'Join DubaiZA' : 'Welcome Back'}</h2>
+                  <p>Buy, sell, and connect with verified buyers and sellers across the UAE.</p>
+                </div>
 
-              <div className="auth-list">
-                <div className="auth-list-item">
-                  <span className="auth-check"><Check size={16} strokeWidth={3} /></span>
-                  <span>Verified sellers & buyers</span>
-                </div>
-                <div className="auth-list-item">
-                  <span className="auth-check"><Check size={16} strokeWidth={3} /></span>
-                  <span>Secure in-app messaging</span>
-                </div>
-                <div className="auth-list-item">
-                  <span className="auth-check"><Check size={16} strokeWidth={3} /></span>
-                  <span>Smart local listings</span>
+                <div className="auth-list">
+                  <div className="auth-list-item">
+                    <span className="auth-check"><Check size={16} strokeWidth={3} /></span>
+                    <span>100% Verified UAE Sellers & Buyers</span>
+                  </div>
+                  <div className="auth-list-item">
+                    <span className="auth-check"><Check size={16} strokeWidth={3} /></span>
+                    <span>Real-time In-App WebSockets Chat</span>
+                  </div>
+                  <div className="auth-list-item">
+                    <span className="auth-check"><Check size={16} strokeWidth={3} /></span>
+                    <span>Instant Free Ad Publishing</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             <div className="auth-panel-right">
-              <button type="button" className="auth-close" aria-label="Close login" onClick={() => setShowAuthModal(false)}>
-                <X size={24} strokeWidth={2.3} />
-              </button>
+              <div className="auth-header-controls">
+                <button
+                  type="button"
+                  className="auth-resize-toggle"
+                  aria-label={modalExpanded ? 'Switch to compact view' : 'Switch to expanded view'}
+                  title={modalExpanded ? 'Compact view' : 'Expand view'}
+                  onClick={() => setModalExpanded((prev) => !prev)}
+                >
+                  {modalExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                </button>
+                <button
+                  type="button"
+                  className="auth-close"
+                  aria-label="Close dialog"
+                  onClick={() => setShowAuthModal(false)}
+                >
+                  <X size={18} strokeWidth={2.4} />
+                </button>
+              </div>
 
               <div className="auth-content">
+                <div className="auth-compact-brand">
+                  <DubaiZALogo size={34} />
+                  <span className="brand-text">Dubai<span className="brand-accent-za">ZA</span></span>
+                </div>
+
                 <div className="auth-view-switch" role="tablist" aria-label="Authentication view">
-                  <button type="button" className={authView === 'login' ? 'active' : ''} onClick={() => setAuthView('login')}>
+                  <button
+                    type="button"
+                    className={authView === 'login' ? 'active' : ''}
+                    onClick={() => { setAuthView('login'); setAuthError('') }}
+                  >
                     Log in
                   </button>
-                  <button type="button" className={authView === 'register' ? 'active' : ''} onClick={() => setAuthView('register')}>
+                  <button
+                    type="button"
+                    className={authView === 'register' ? 'active' : ''}
+                    onClick={() => { setAuthView('register'); setAuthError('') }}
+                  >
                     Register
                   </button>
                 </div>
 
                 <h3>{authView === 'register' ? 'Create your account' : 'Welcome back'}</h3>
-                <p>{authView === 'register' ? 'Set up a profile to start buying and selling.' : 'Enter your details to sign in.'}</p>
+                <p>{authView === 'register' ? 'Quick registration to start buying and selling across UAE.' : 'Sign in to access your listings and chats.'}</p>
 
                 <button type="button" className="auth-provider auth-provider--google">
                   <span className="provider-icon provider-icon--google" aria-hidden="true">
@@ -1170,7 +1277,7 @@ function App() {
                     className={authMode === 'email' ? 'active' : ''}
                     onClick={() => setAuthMode('email')}
                   >
-                    <Mail size={17} />
+                    <Mail size={15} />
                     <span>Email</span>
                   </button>
                   <button
@@ -1180,7 +1287,7 @@ function App() {
                     className={authMode === 'phone' ? 'active' : ''}
                     onClick={() => setAuthMode('phone')}
                   >
-                    <Phone size={17} />
+                    <Phone size={15} />
                     <span>Phone</span>
                   </button>
                 </div>
@@ -1190,13 +1297,13 @@ function App() {
                     <label className="auth-field">
                       <span>FULL NAME</span>
                       <div className="auth-input-wrap">
-                        <UsersRound size={18} />
+                        <User size={17} />
                         <input
                           type="text"
                           required
-                          placeholder="Your full name"
+                          placeholder="e.g. Tariq Al Hashimi"
                           value={authFormData.name}
-                          onChange={(e) => setAuthFormData(prev => ({ ...prev, name: e.target.value }))}
+                          onChange={(e) => setAuthFormData((prev) => ({ ...prev, name: e.target.value }))}
                         />
                       </div>
                     </label>
@@ -1205,13 +1312,13 @@ function App() {
                   <label className="auth-field">
                     <span>{authMode === 'email' ? 'EMAIL ADDRESS' : 'PHONE NUMBER'}</span>
                     <div className="auth-input-wrap">
-                      {authMode === 'email' ? <Mail size={18} /> : <Phone size={18} />}
+                      {authMode === 'email' ? <Mail size={17} /> : <Phone size={17} />}
                       <input
                         type={authMode === 'email' ? 'email' : 'tel'}
                         required
                         placeholder={authMode === 'email' ? 'name@example.com' : '+971 50 123 4567'}
                         value={authFormData.identifier}
-                        onChange={(e) => setAuthFormData(prev => ({ ...prev, identifier: e.target.value }))}
+                        onChange={(e) => setAuthFormData((prev) => ({ ...prev, identifier: e.target.value }))}
                       />
                     </div>
                   </label>
@@ -1219,21 +1326,26 @@ function App() {
                   <label className="auth-field">
                     <span>PASSWORD</span>
                     <div className="auth-input-wrap auth-input-wrap--password">
-                      <Lock size={18} />
+                      <Lock size={17} />
                       <input
                         type={showPassword ? 'text' : 'password'}
-                        placeholder="Create a strong password"
+                        placeholder="Enter password"
                         value={authFormData.password}
-                        onChange={(e) => setAuthFormData(prev => ({ ...prev, password: e.target.value }))}
+                        onChange={(e) => setAuthFormData((prev) => ({ ...prev, password: e.target.value }))}
                       />
-                      <button type="button" className="password-toggle" aria-label={showPassword ? 'Hide password' : 'Show password'} onClick={() => setShowPassword((open) => !open)}>
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      <button
+                        type="button"
+                        className="password-toggle"
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        onClick={() => setShowPassword((open) => !open)}
+                      >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                     </div>
                   </label>
 
                   {authError && (
-                    <p style={{ color: '#ef4444', fontSize: '0.85rem', margin: '6px 0 10px', fontWeight: 600 }}>
+                    <p style={{ color: '#ef4444', fontSize: '0.82rem', margin: '4px 0 8px', fontWeight: 600 }}>
                       {authError}
                     </p>
                   )}
@@ -1249,19 +1361,26 @@ function App() {
                   ) : (
                     <label className="auth-checkbox auth-checkbox--full">
                       <input type="checkbox" defaultChecked />
-                      <span>I agree to the terms and privacy policy.</span>
+                      <span>I agree to Terms & Privacy Policy.</span>
                     </label>
                   )}
 
                   <button type="submit" className="auth-submit" disabled={authLoading}>
-                    <span>{authLoading ? 'Connecting...' : (authView === 'register' ? 'Create account' : 'Log In')}</span>
-                    <ArrowRight size={20} />
+                    <span>{authLoading ? 'Connecting...' : (authView === 'register' ? 'Create Account' : 'Log In')}</span>
+                    <ArrowRight size={18} />
                   </button>
                 </form>
 
                 <p className="auth-footer-copy">
                   {authView === 'register' ? 'Already have an account?' : 'New to DubaiZA?'}{' '}
-                  <button type="button" className="auth-inline-link" onClick={() => setAuthView(authView === 'register' ? 'login' : 'register')}>
+                  <button
+                    type="button"
+                    className="auth-inline-link"
+                    onClick={() => {
+                      setAuthView(authView === 'register' ? 'login' : 'register')
+                      setAuthError('')
+                    }}
+                  >
                     {authView === 'register' ? 'Log in' : 'Create account'}
                   </button>
                 </p>
@@ -1276,8 +1395,11 @@ function App() {
           <aside className="mobile-drawer" onClick={(e) => e.stopPropagation()}>
             <div className="mobile-drawer-header">
               <div className="brand" onClick={() => { setActivePage('Home'); setMenuOpen(false) }}>
-                <span className="brand-mark">D</span>
-                <span className="brand-text" style={{ color: '#111827' }}>DubaiZA</span>
+                <DubaiZALogo size={38} />
+                <div className="brand-text-wrap">
+                  <span className="brand-text" style={{ color: '#111827' }}>Dubai<span className="brand-accent-za">ZA</span></span>
+                  <span className="brand-subtext">UAE Marketplace</span>
+                </div>
               </div>
               <button
                 type="button"
@@ -1452,8 +1574,11 @@ function App() {
 
       <header className="topbar">
         <button className="brand" type="button" aria-label="DubaiZA home" onClick={() => { setActivePage('Home'); setMenuOpen(false) }}>
-          <span className="brand-mark">D</span>
-          <span className="brand-text">DubaiZA</span>
+          <DubaiZALogo size={38} />
+          <div className="brand-text-wrap">
+            <span className="brand-text">Dubai<span className="brand-accent-za">ZA</span></span>
+            <span className="brand-subtext">Verified UAE</span>
+          </div>
         </button>
 
         <nav className={`site-nav ${menuOpen ? 'is-open' : ''}`} aria-label="Main navigation">
@@ -1789,42 +1914,66 @@ function App() {
           type="button"
           className={`mobile-nav-item ${activePage === 'Home' ? 'active' : ''}`}
           onClick={() => setActivePage('Home')}
+          aria-label="Home page"
         >
-          <span className="mobile-nav-icon"><House size={20} /></span>
-          <span>Home</span>
+          <div className="nav-icon-wrapper">
+            <House size={22} strokeWidth={activePage === 'Home' ? 2.5 : 1.9} />
+            {activePage === 'Home' && <span className="nav-active-dot" />}
+          </div>
+          <span className="nav-label">Home</span>
         </button>
+
         <button
           type="button"
           className={`mobile-nav-item ${activePage === 'Search' ? 'active' : ''}`}
           onClick={() => setActivePage('Search')}
+          aria-label="Search listings"
         >
-          <span className="mobile-nav-icon"><Search size={20} /></span>
-          <span>Search</span>
+          <div className="nav-icon-wrapper">
+            <Search size={22} strokeWidth={activePage === 'Search' ? 2.5 : 1.9} />
+            {activePage === 'Search' && <span className="nav-active-dot" />}
+          </div>
+          <span className="nav-label">Search</span>
         </button>
+
         <button
           type="button"
-          className="mobile-nav-item sell-item"
+          className={`mobile-nav-item sell-item ${activePage === 'Sell' ? 'active' : ''}`}
           onClick={() => setActivePage('Sell')}
           aria-label="Post an ad"
         >
-          <span className="mobile-nav-bubble"><Plus size={28} strokeWidth={2.8} /></span>
-          <span>Sell</span>
+          <div className="sell-bubble-glow">
+            <div className="mobile-nav-bubble">
+              <Plus size={26} strokeWidth={3} />
+            </div>
+          </div>
+          <span className="nav-label sell-label">Sell</span>
         </button>
+
         <button
           type="button"
           className={`mobile-nav-item ${activePage === 'Chat' ? 'active' : ''}`}
           onClick={() => setActivePage('Chat')}
+          aria-label="Live Chat"
         >
-          <span className="mobile-nav-icon"><MessageCircle size={20} /></span>
-          <span>Chat</span>
+          <div className="nav-icon-wrapper">
+            <MessageCircle size={22} strokeWidth={activePage === 'Chat' ? 2.5 : 1.9} />
+            {activePage === 'Chat' && <span className="nav-active-dot" />}
+          </div>
+          <span className="nav-label">Chat</span>
         </button>
+
         <button
           type="button"
           className={`mobile-nav-item ${activePage === 'Profile' ? 'active' : ''}`}
           onClick={() => setActivePage('Profile')}
+          aria-label="User Profile"
         >
-          <span className="mobile-nav-icon"><UsersRound size={20} /></span>
-          <span>Profile</span>
+          <div className="nav-icon-wrapper">
+            <User size={22} strokeWidth={activePage === 'Profile' ? 2.5 : 1.9} />
+            {activePage === 'Profile' && <span className="nav-active-dot" />}
+          </div>
+          <span className="nav-label">Profile</span>
         </button>
       </nav>
 
@@ -1832,8 +1981,11 @@ function App() {
         <div className="footer-top-columns">
           <div className="footer-col">
             <div className="brand footer-brand" onClick={() => setActivePage('Home')}>
-              <span className="brand-mark">D</span>
-              <span className="brand-text">DubaiZA</span>
+              <DubaiZALogo size={36} />
+              <div className="brand-text-wrap">
+                <span className="brand-text">Dubai<span className="brand-accent-za">ZA</span></span>
+                <span className="brand-subtext">The UAE Marketplace</span>
+              </div>
             </div>
             <p className="footer-desc">
               The UAE&apos;s leading classifieds marketplace. Buy, sell, and find cars, properties, jobs, tech, and services across Dubai, Abu Dhabi, and the Emirates.
