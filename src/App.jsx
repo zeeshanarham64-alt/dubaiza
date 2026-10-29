@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 import ChatPage from './ChatPage.jsx'
+import { io } from 'socket.io-client'
 import {
   ArrowRight,
   BriefcaseBusiness,
@@ -872,22 +873,126 @@ function App() {
   const [authView, setAuthView] = useState('login')
   const [authMode, setAuthMode] = useState('email')
   const [showPassword, setShowPassword] = useState(false)
+  const [authFormData, setAuthFormData] = useState({ name: '', identifier: '', password: '' })
+  const [authError, setAuthError] = useState('')
+  const [authLoading, setAuthLoading] = useState(false)
   const [themeMenuOpen, setThemeMenuOpen] = useState(false)
   const [themeId, setThemeId] = useStoredState('dubaiza-theme', 'ruby')
   const [savedIds, setSavedIds] = useStoredState('dubaiza-saved', [])
   const [userListings, setUserListings] = useStoredState('dubaiza-listings', [])
+  const [backendListings, setBackendListings] = useState([])
+  const [apiConnected, setApiConnected] = useState(false)
   const [profile, setProfile] = useStoredState('dubaiza-profile', { name: '', email: '' })
   const [conversations, setConversations] = useStoredState('dubaiza-chat-rooms-v2', [])
   const [activeConversationId, setActiveConversationId] = useState(inviteChatId)
   const [chatServiceError, setChatServiceError] = useState('')
   const theme = themes.find((option) => option.id === themeId) || themes[0]
-  const allListings = [...userListings, ...cards, ...projects]
-  const homeListings = [...userListings, ...cards].filter((item) =>
+
+  // Full-Stack backend sync on mount
+  useEffect(() => {
+    let active = true
+
+    async function loadBackendData() {
+      try {
+        const [listingsRes, favoritesRes] = await Promise.allSettled([
+          fetch('/api/listings'),
+          fetch('/api/favorites'),
+        ])
+
+        if (listingsRes.status === 'fulfilled' && listingsRes.value.ok) {
+          const data = await listingsRes.value.json()
+          if (active && Array.isArray(data.listings) && data.listings.length > 0) {
+            setBackendListings(data.listings)
+            setApiConnected(true)
+          }
+        }
+
+        if (favoritesRes.status === 'fulfilled' && favoritesRes.value.ok) {
+          const favData = await favoritesRes.value.json()
+          if (active && Array.isArray(favData.favorites) && favData.favorites.length > 0) {
+            setSavedIds(favData.favorites)
+          }
+        }
+      } catch (err) {
+        console.warn('Backend API unreachable, using local fallback:', err)
+      }
+    }
+
+    loadBackendData()
+
+    // Real-time socket sync for new/deleted listings
+    let socket
+    try {
+      socket = io({ path: '/socket.io', reconnectionAttempts: 3, timeout: 4000 })
+      socket.on('listing:created', (newListing) => {
+        if (!active) return
+        setBackendListings((prev) => {
+          if (prev.some((item) => item.id === newListing.id)) return prev
+          return [newListing, ...prev]
+        })
+      })
+      socket.on('listing:deleted', ({ id }) => {
+        if (!active) return
+        setBackendListings((prev) => prev.filter((item) => String(item.id) !== String(id)))
+      })
+    } catch {}
+
+    return () => {
+      active = false
+      if (socket) socket.disconnect()
+    }
+  }, [])
+
+  const currentCatalog = backendListings.length > 0 ? backendListings : cards
+  const allListings = [...userListings, ...currentCatalog, ...projects]
+  const homeListings = [...userListings, ...currentCatalog].filter((item) =>
     selectedCategory === 'All' || item.category === selectedCategory,
   )
 
-  function toggleSaved(id) {
-    setSavedIds((current) => current.includes(id) ? current.filter((savedId) => savedId !== id) : [...current, id])
+  async function toggleSaved(id) {
+    setSavedIds((current) =>
+      current.includes(id) ? current.filter((savedId) => savedId !== id) : [...current, id]
+    )
+    try {
+      await fetch(`/api/favorites/${id}`, { method: 'POST' })
+    } catch {}
+  }
+
+  async function handleAuthSubmit(e) {
+    if (e) e.preventDefault()
+    setAuthError('')
+    setAuthLoading(true)
+
+    try {
+      const endpoint = authView === 'register' ? '/api/auth/register' : '/api/auth/login'
+      const payload = {
+        name: authFormData.name || (authMode === 'email' ? authFormData.identifier.split('@')[0] : 'DubaiZA User'),
+        [authMode === 'email' ? 'email' : 'phone']: authFormData.identifier,
+        city: 'Dubai',
+      }
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Authentication failed')
+
+      setProfile({
+        id: data.user.id,
+        name: data.user.name,
+        email: data.user.email || '',
+        phone: data.user.phone || '',
+        city: data.user.city || 'Dubai',
+      })
+      setShowAuthModal(false)
+      setAuthFormData({ name: '', identifier: '', password: '' })
+    } catch (err) {
+      setAuthError(err.message || 'Could not sign in. Please try again.')
+    } finally {
+      setAuthLoading(false)
+    }
   }
 
   async function startConversation(item) {
@@ -925,29 +1030,53 @@ function App() {
     setActivePage('Chat')
   }
 
-  function publishListing(details) {
-    const listing = {
-      ...details,
-      id: `listing-${Date.now()}`,
-      badge: 'New',
-      accent: 'new',
-      time: 'Just now',
-      info: [],
-      image: details.image || (details.category === 'Property'
-        ? projects[0].image
-        : details.category === 'Motors'
-          ? cards[0].image
-          : cards[3].image),
+  async function publishListing(details) {
+    let savedListing = null
+    try {
+      const response = await fetch('/api/listings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(details),
+      })
+      if (response.ok) {
+        const data = await response.json()
+        savedListing = data.listing
+      }
+    } catch {}
+
+    if (!savedListing) {
+      savedListing = {
+        ...details,
+        id: `listing-${Date.now()}`,
+        badge: 'New',
+        accent: 'new',
+        time: 'Just now',
+        info: [details.city || 'Dubai', 'Verified Seller'],
+        image: details.image || (details.category === 'Property'
+          ? projects[0].image
+          : details.category === 'Motors'
+            ? cards[0].image
+            : cards[3].image),
+      }
     }
-    setUserListings((current) => [listing, ...current])
+
+    setUserListings((current) => [savedListing, ...current])
+    setBackendListings((current) => {
+      if (current.some((item) => item.id === savedListing.id)) return current
+      return [savedListing, ...current]
+    })
     setSelectedCategory('All')
     setSelectedCity('All Cities')
     setSearchQuery('')
     setActivePage('Search')
   }
 
-  function deleteListing(id) {
+  async function deleteListing(id) {
+    try {
+      await fetch(`/api/listings/${id}`, { method: 'DELETE' })
+    } catch {}
     setUserListings((current) => current.filter((listing) => listing.id !== id))
+    setBackendListings((current) => current.filter((listing) => listing.id !== id))
   }
 
   return (
@@ -1056,54 +1185,79 @@ function App() {
                   </button>
                 </div>
 
-                {authView === 'register' && (
+                <form onSubmit={handleAuthSubmit}>
+                  {authView === 'register' && (
+                    <label className="auth-field">
+                      <span>FULL NAME</span>
+                      <div className="auth-input-wrap">
+                        <UsersRound size={18} />
+                        <input
+                          type="text"
+                          required
+                          placeholder="Your full name"
+                          value={authFormData.name}
+                          onChange={(e) => setAuthFormData(prev => ({ ...prev, name: e.target.value }))}
+                        />
+                      </div>
+                    </label>
+                  )}
+
                   <label className="auth-field">
-                    <span>FULL NAME</span>
+                    <span>{authMode === 'email' ? 'EMAIL ADDRESS' : 'PHONE NUMBER'}</span>
                     <div className="auth-input-wrap">
-                      <UsersRound size={18} />
-                      <input type="text" placeholder="Your full name" />
+                      {authMode === 'email' ? <Mail size={18} /> : <Phone size={18} />}
+                      <input
+                        type={authMode === 'email' ? 'email' : 'tel'}
+                        required
+                        placeholder={authMode === 'email' ? 'name@example.com' : '+971 50 123 4567'}
+                        value={authFormData.identifier}
+                        onChange={(e) => setAuthFormData(prev => ({ ...prev, identifier: e.target.value }))}
+                      />
                     </div>
                   </label>
-                )}
 
-                <label className="auth-field">
-                  <span>{authMode === 'email' ? 'EMAIL ADDRESS' : 'PHONE NUMBER'}</span>
-                  <div className="auth-input-wrap">
-                    {authMode === 'email' ? <Mail size={18} /> : <Phone size={18} />}
-                    <input type={authMode === 'email' ? 'email' : 'tel'} placeholder={authMode === 'email' ? 'name@example.com' : '+971 50 123 4567'} />
-                  </div>
-                </label>
-
-                <label className="auth-field">
-                  <span>PASSWORD</span>
-                  <div className="auth-input-wrap auth-input-wrap--password">
-                    <Lock size={18} />
-                    <input type={showPassword ? 'text' : 'password'} placeholder="Create a strong password" />
-                    <button type="button" className="password-toggle" aria-label={showPassword ? 'Hide password' : 'Show password'} onClick={() => setShowPassword((open) => !open)}>
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                </label>
-
-                {authView === 'login' ? (
-                  <div className="auth-row">
-                    <label className="auth-checkbox">
-                      <input type="checkbox" defaultChecked />
-                      <span>Remember me</span>
-                    </label>
-                    <button type="button" className="auth-forgot">Forgot Password?</button>
-                  </div>
-                ) : (
-                  <label className="auth-checkbox auth-checkbox--full">
-                    <input type="checkbox" />
-                    <span>I agree to the terms and privacy policy.</span>
+                  <label className="auth-field">
+                    <span>PASSWORD</span>
+                    <div className="auth-input-wrap auth-input-wrap--password">
+                      <Lock size={18} />
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="Create a strong password"
+                        value={authFormData.password}
+                        onChange={(e) => setAuthFormData(prev => ({ ...prev, password: e.target.value }))}
+                      />
+                      <button type="button" className="password-toggle" aria-label={showPassword ? 'Hide password' : 'Show password'} onClick={() => setShowPassword((open) => !open)}>
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
                   </label>
-                )}
 
-                <button type="button" className="auth-submit" onClick={() => setShowAuthModal(false)}>
-                  <span>{authView === 'register' ? 'Create account' : 'Log In'}</span>
-                  <ArrowRight size={20} />
-                </button>
+                  {authError && (
+                    <p style={{ color: '#ef4444', fontSize: '0.85rem', margin: '6px 0 10px', fontWeight: 600 }}>
+                      {authError}
+                    </p>
+                  )}
+
+                  {authView === 'login' ? (
+                    <div className="auth-row">
+                      <label className="auth-checkbox">
+                        <input type="checkbox" defaultChecked />
+                        <span>Remember me</span>
+                      </label>
+                      <button type="button" className="auth-forgot">Forgot Password?</button>
+                    </div>
+                  ) : (
+                    <label className="auth-checkbox auth-checkbox--full">
+                      <input type="checkbox" defaultChecked />
+                      <span>I agree to the terms and privacy policy.</span>
+                    </label>
+                  )}
+
+                  <button type="submit" className="auth-submit" disabled={authLoading}>
+                    <span>{authLoading ? 'Connecting...' : (authView === 'register' ? 'Create account' : 'Log In')}</span>
+                    <ArrowRight size={20} />
+                  </button>
+                </form>
 
                 <p className="auth-footer-copy">
                   {authView === 'register' ? 'Already have an account?' : 'New to DubaiZA?'}{' '}
@@ -1135,27 +1289,60 @@ function App() {
               </button>
             </div>
 
-            <div className="mobile-drawer-auth">
-              <div className="mobile-drawer-auth-copy">
-                <strong>Welcome to DubaiZA</strong>
-                <p>Buy, sell & connect with verified UAE users</p>
+            {profile.name ? (
+              <div className="mobile-drawer-auth mobile-drawer-auth--user">
+                <div className="mobile-user-row" onClick={() => { setActivePage('Profile'); setMenuOpen(false) }}>
+                  <div className="mobile-user-avatar">{profile.name.charAt(0).toUpperCase()}</div>
+                  <div className="mobile-user-details">
+                    <strong>{profile.name}</strong>
+                    <p>{profile.email || profile.phone || 'Verified UAE Member'}</p>
+                  </div>
+                </div>
+                <div className="mobile-drawer-auth-buttons">
+                  <button
+                    type="button"
+                    className="mobile-auth-btn mobile-auth-btn--primary"
+                    onClick={() => { setActivePage('Profile'); setMenuOpen(false) }}
+                  >
+                    My Account
+                  </button>
+                  <button
+                    type="button"
+                    className="mobile-auth-btn mobile-auth-btn--secondary"
+                    onClick={() => { setProfile({ name: '', email: '' }); setMenuOpen(false) }}
+                  >
+                    Sign Out
+                  </button>
+                </div>
               </div>
-              <div className="mobile-drawer-auth-buttons">
-                <button
-                  type="button"
-                  className="mobile-auth-btn mobile-auth-btn--primary"
-                  onClick={() => { setAuthView('login'); setShowAuthModal(true); setMenuOpen(false) }}
-                >
-                  Log in
-                </button>
-                <button
-                  type="button"
-                  className="mobile-auth-btn mobile-auth-btn--secondary"
-                  onClick={() => { setAuthView('register'); setShowAuthModal(true); setMenuOpen(false) }}
-                >
-                  Register
-                </button>
+            ) : (
+              <div className="mobile-drawer-auth">
+                <div className="mobile-drawer-auth-copy">
+                  <strong>Welcome to DubaiZA</strong>
+                  <p>Buy, sell & connect with verified UAE users</p>
+                </div>
+                <div className="mobile-drawer-auth-buttons">
+                  <button
+                    type="button"
+                    className="mobile-auth-btn mobile-auth-btn--primary"
+                    onClick={() => { setAuthView('login'); setShowAuthModal(true); setMenuOpen(false) }}
+                  >
+                    Log in
+                  </button>
+                  <button
+                    type="button"
+                    className="mobile-auth-btn mobile-auth-btn--secondary"
+                    onClick={() => { setAuthView('register'); setShowAuthModal(true); setMenuOpen(false) }}
+                  >
+                    Register
+                  </button>
+                </div>
               </div>
+            )}
+
+            <div className="mobile-drawer-status-pill">
+              <span className="status-dot">●</span>
+              <span>Full-Stack API Live • {currentCatalog.length} Listings</span>
             </div>
 
             <div className="mobile-drawer-post">
@@ -1592,6 +1779,7 @@ function App() {
             onToggleSaved={toggleSaved}
             onDeleteListing={deleteListing}
             onMessage={startConversation}
+            onLogout={() => setProfile({ name: '', email: '' })}
           />
         )}
       </main>
@@ -1856,7 +2044,7 @@ function SellPage({ onPublish }) {
   )
 }
 
-function ProfilePage({ profile, onSaveProfile, savedListings, myListings, onToggleSaved, onDeleteListing, onMessage }) {
+function ProfilePage({ profile, onSaveProfile, savedListings, myListings, onToggleSaved, onDeleteListing, onMessage, onLogout }) {
   const [name, setName] = useState(profile.name)
   const [email, setEmail] = useState(profile.email)
   const [notice, setNotice] = useState('')
@@ -1865,22 +2053,34 @@ function ProfilePage({ profile, onSaveProfile, savedListings, myListings, onTogg
       <div className="page-heading">
         <p className="page-eyebrow">Your DubaiZA account</p>
         <h1 id="profile-title">{profile.name ? `Hello, ${profile.name}.` : 'Your profile'}</h1>
-        <p>Manage your profile, saved listings, and your ads on this device.</p>
+        <p>Manage your profile, live listings, and saved items across devices.</p>
       </div>
       <form
         className="form-panel profile-form"
         onSubmit={(event) => {
           event.preventDefault()
-          onSaveProfile({ name, email })
-          setNotice('Profile saved on this device.')
+          onSaveProfile({ ...profile, name, email })
+          setNotice('Profile updated and saved to account.')
         }}
       >
         <h2>Profile details</h2>
         <label>Name<input value={name} onChange={(event) => setName(event.target.value)} required maxLength="60" placeholder="Your name" /></label>
         <label>Email address<input value={email} onChange={(event) => setEmail(event.target.value)} type="email" required placeholder="you@example.com" /></label>
-        <button className="search-button form-submit" type="submit">Save profile</button>
+        <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
+          <button className="search-button form-submit" type="submit" style={{ flex: 1 }}>Save profile</button>
+          {profile.name && onLogout && (
+            <button
+              type="button"
+              className="search-button"
+              style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', cursor: 'pointer' }}
+              onClick={onLogout}
+            >
+              Sign out
+            </button>
+          )}
+        </div>
         {notice && <p className="form-notice" role="status">{notice}</p>}
-        <p className="form-footnote">Profile data stays in this browser. Online accounts need a connected service.</p>
+        <p className="form-footnote">Connected to DubaiZA Full-Stack backend.</p>
       </form>
       <section className="profile-list-section">
         <h2>Saved listings <span>{savedListings.length}</span></h2>
