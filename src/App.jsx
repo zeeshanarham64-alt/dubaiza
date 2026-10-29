@@ -111,6 +111,17 @@ const mobileNavItems = [
 ]
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=900&q=80';
+const CATEGORY_FALLBACKS = {
+  Motors: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?auto=format&fit=crop&w=900&q=80',
+  Property: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=900&q=80',
+  Jobs: 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=900&q=80',
+  Electronics: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=900&q=80',
+  'Furniture & Garden': 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=900&q=80',
+  'Mobile Phones': 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80',
+  Services: 'https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?auto=format&fit=crop&w=900&q=80',
+  Classifieds: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=900&q=80',
+  Community: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=900&q=80',
+};
 
 const cards = [
   // --- MOTORS ---
@@ -388,7 +399,7 @@ const cards = [
   },
   {
     id: 20,
-    image: 'https://images.unsplash.com/photo-1571340636302-3114d2382e75?auto=format&fit=crop&w=900&q=80',
+    image: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=900&q=80',
     badge: 'DJ Gear',
     category: 'Electronics',
     time: 'Yesterday',
@@ -474,7 +485,7 @@ const cards = [
   },
   {
     id: 26,
-    image: 'https://images.unsplash.com/photo-1580481077195-c3a82145d875?auto=format&fit=crop&w=900&q=80',
+    image: 'https://images.unsplash.com/photo-1505797149-43b0069ec26b?auto=format&fit=crop&w=900&q=80',
     badge: 'Ergonomic',
     category: 'Furniture & Garden',
     time: 'Today',
@@ -562,7 +573,7 @@ const cards = [
   // --- SERVICES ---
   {
     id: 32,
-    image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6c08?auto=format&fit=crop&w=900&q=80',
+    image: 'https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?auto=format&fit=crop&w=900&q=80',
     badge: 'Verified',
     category: 'Services',
     time: 'Today',
@@ -816,7 +827,7 @@ function useStoredState(key, fallback) {
 
 function ListingCard({ item, saved, onToggleSaved, onMessage, onDelete, compact = false }) {
   const [imgError, setImgError] = useState(false);
-  const displayImage = imgError || !item.image ? FALLBACK_IMAGE : item.image;
+  const displayImage = imgError || !item.image ? (CATEGORY_FALLBACKS[item.category] || FALLBACK_IMAGE) : item.image;
 
   return (
     <article className={`listing-card ${compact ? 'compact-card' : ''}`}>

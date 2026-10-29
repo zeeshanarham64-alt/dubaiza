@@ -274,7 +274,7 @@ export const initialListings = [
   },
   {
     id: 'listing-e4',
-    image: 'https://images.unsplash.com/photo-1571340636302-3114d2382e75?auto=format&fit=crop&w=900&q=80',
+    image: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=900&q=80',
     badge: 'DJ Gear',
     category: 'Electronics',
     time: 'Yesterday',
@@ -360,7 +360,7 @@ export const initialListings = [
   },
   {
     id: 'listing-f5',
-    image: 'https://images.unsplash.com/photo-1580481077195-c3a82145d875?auto=format&fit=crop&w=900&q=80',
+    image: 'https://images.unsplash.com/photo-1505797149-43b0069ec26b?auto=format&fit=crop&w=900&q=80',
     badge: 'Ergonomic',
     category: 'Furniture & Garden',
     time: 'Today',
@@ -448,7 +448,7 @@ export const initialListings = [
   // --- SERVICES ---
   {
     id: 'listing-s1',
-    image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6c08?auto=format&fit=crop&w=900&q=80',
+    image: 'https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?auto=format&fit=crop&w=900&q=80',
     badge: 'Verified',
     category: 'Services',
     time: 'Today',
